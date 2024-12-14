@@ -7,7 +7,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 setup(
-    name='workan-otp-playback',
+    name='workano-otp-playback',
     version='0.1',
     description='A plugin for otp playback with different type of otp',
     author='Shahrooz Bazrafshan',

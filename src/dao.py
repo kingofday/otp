@@ -13,16 +13,16 @@ def search(tenant_uuids=None, **parameters):
     return _persistor(tenant_uuids).search(parameters)
 
 
-def get(id, tenant_uuids=None):
-    return _persistor(tenant_uuids).get_by({'id': id})
+def get(otp_uuid, tenant_uuids=None):
+    return _persistor(tenant_uuids).get_by({'uuid': otp_uuid})
 
 
 def get_by(tenant_uuids=None, **criteria):
     return _persistor(tenant_uuids).get_by(criteria)
 
 
-def find(id, tenant_uuids=None):
-    return _persistor(tenant_uuids).find_by({'id': id})
+def find(otp_uuid, tenant_uuids=None):
+    return _persistor(tenant_uuids).find_by({'uuid': otp_uuid})
 
 
 def find_by(tenant_uuids=None, **criteria):

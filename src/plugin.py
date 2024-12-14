@@ -13,7 +13,7 @@ class Plugin:
         auth_client = AuthClient(**config['auth'])
         calld_client = CalldClient(host='127.0.0.1', port=443, verify_certificate=False, https=True)
         confd_client = ConfdClient(host='127.0.0.1', port=443, verify_certificate=False, https=True)
-        init_db('postgresql://asterisk:proformatique@localhost/asterisk?application_name=wazo-power_dialer-plugin')
+        init_db('postgresql://asterisk:proformatique@localhost/asterisk?application_name=workano-otp-playback-plugin')
         campaign_service = build_campaign_service(auth_client, calld_client, confd_client)
         contact_service = build_contact_service()
         contact_list_service = build_contact_list_service()

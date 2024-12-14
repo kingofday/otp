@@ -2,7 +2,7 @@ import traceback
 import time
 from datetime import datetime
 from threading import Thread
-
+from .model import OtpRequestModel
 from marshmallow import ValidationError
 from wazo_calld_client import Client
 from xivo_dao.helpers.db_manager import Session
@@ -17,12 +17,14 @@ import logging
 
 logger = logging.getLogger(__name__)
 
+
 def build_otp_playback_service(auth_client, calld_client):
     return OtpPlaybackService(
         auth_client,
         calld_client,
         dao
     )
+
 
 class OtpPlaybackService:
 
@@ -35,80 +37,83 @@ class OtpPlaybackService:
         self.auth_client = auth_client
         self.calld_client = calld_client
         self.confd_client = confd_client
-        token = self.auth_client.token.new(expiration=365 * 24 * 60 * 60)['token']
+        token = self.auth_client.token.new(
+            expiration=365 * 24 * 60 * 60)['token']
         self.calld_client.set_token(token)
         self.confd_client.set_token(token)
 
-    def processRequest(self, campaign_uuid):
-        campaign = self.get_by(uuid=campaign_uuid)
-        application = self.create_application(campaign.tenant_uuid)
-        campaign.application_uuid = application["uuid"]
-        campaign.state = "start"
-        self.edit(campaign)
-        self.commit()
-        self.delete_empty_campaign_contact_call(campaign)
-        self.create_empty_campaign_contact_call(campaign)
-        self.make_next_application_call(application["uuid"])
-        return campaign
+    def processOtpRequest(self, application_uuid, language, number, uris, context):
+        logger.info("Processing OTP request, application_uuid: %s, language: %s, number: %s, uris: %s", 
+                application_uuid, language, number, uris)
+        application = self.confd_client.applications.get(application_uuid)
+        if not application:  # If the application is None or empty
+            return {
+                "error": "Application not found",
+                "result": None
+            }
 
-    def pause(self, campaign_uuid):
-        campaign = self.get_by(uuid=campaign_uuid)
-        campaign.state = "pause"
-        self.edit(campaign)
-        self.commit()
-        return campaign
+        call_args = {
+            'context': context,
+            'exten': number,
+            'autoanswer': False
+        }
+        call = self.calld_client.applications.make_call(
+            application_uuid, call_args)
+        logger.info("Make a call:  %s",call)
+        otp_request = self.create_otp_request(
+            application_uuid, language, application['tenant_uuid'], uris, call)
+        return {
+            "error": None,
+            "result": otp_request
+        }
 
-    def resume(self, campaign_uuid):
-        campaign = self.get_by(uuid=campaign_uuid)
-        if campaign.state != "pause":
-            raise ValidationError("only campaigns with pause state can be resumed.")
-        campaign.state = "resume"
-        self.edit(campaign)
-        self.commit()
-        self.make_next_application_call(campaign.application_uuid)
-        return campaign
+    def create_otp_request(self, application_uuid, language, tenant_uuid, uris, call):
+        otp_request_args = {
+            "call_id": call['id'],
+            "tenant_uuid": tenant_uuid,
+            "application_uuid": application_uuid,
+            "number": call['number'],
+            "caller_id_name": call['caller_id_name'],
+            "caller_id_number": call['caller_id_number'],
+            "language": language,
+            "uris": uris,
+            "status": call['caller_id_number'],
+            "answered": call['answrered'],
+            "creation_time": datetime.strptime(call["creation_time"], "%Y-%m-%dT%H:%M:%S") if "creation_time" in call else None,
+            "talking_to": call.get("talking_to", {})
+        }
 
-    def stop(self, campaign_uuid):
-        campaign = self.get_by(uuid=campaign_uuid)
-        campaign.state = "stop"
-        self.edit(campaign)
-        self.commit()
-        self.delete_empty_campaign_contact_call(campaign)
-        return campaign
-
-    def finish(self, application_uuid):
-        campaign = self.get_by(application_uuid=application_uuid)
-        if campaign.state == "pause" or campaign.state == "stop":
-            return
-        campaign.state = "finish"
-        self.edit(campaign)
-        self.commit()
-        self.delete_application(application_uuid)
+        otp_request = OtpRequestModel(**otp_request_args)
+        return dao.create(otp_request)
 
     def application_call_answered(self, event):
         if event["call"]["is_caller"]:
             return
-        campaign_contact_call = self.find_last_campaign_contact_call(event["application_uuid"])
+        campaign_contact_call = self.find_last_campaign_contact_call(
+            event["application_uuid"])
         campaign_contact_call.call_answered = datetime.now()
         self.campaign_contact_call_service.edit(campaign_contact_call)
         self.commit()
         self.play_music(event["application_uuid"], event["call"]["id"])
 
     def application_playback_created(self, event):
-        campaign_contact_call = self.find_last_campaign_contact_call(event["application_uuid"])
+        campaign_contact_call = self.find_last_campaign_contact_call(
+            event["application_uuid"])
         campaign_contact_call.playback_created = datetime.now()
         self.campaign_contact_call_service.edit(campaign_contact_call)
         self.commit()
 
     def application_playback_deleted(self, event):
-        campaign_contact_call = self.find_last_campaign_contact_call(event["application_uuid"])
+        campaign_contact_call = self.find_last_campaign_contact_call(
+            event["application_uuid"])
         campaign_contact_call.playback_deleted = datetime.now()
         self.campaign_contact_call_service.edit(campaign_contact_call)
         self.commit()
         self.hangup_application_call(event["application_uuid"])
 
     def application_call_deleted(self, event):
-        campaign_contact_call = self.find_last_campaign_contact_call(event["application_uuid"])
+        campaign_contact_call = self.find_last_campaign_contact_call(
+            event["application_uuid"])
         campaign_contact_call.call_deleted = datetime.now()
         self.campaign_contact_call_service.edit(campaign_contact_call)
         self.commit()
@@ -131,7 +136,8 @@ class OtpPlaybackService:
 
     def find_last_campaign_contact_call(self, application_uuid):
         campaign = self.get_by(application_uuid=application_uuid)
-        last_call = self.campaign_contact_call_service.get_last_cantact_call(campaign.uuid)
+        last_call = self.campaign_contact_call_service.get_last_cantact_call(
+            campaign.uuid)
         return last_call
 
     def create_application(self, tenant_uuid):
@@ -153,14 +159,16 @@ class OtpPlaybackService:
 
     def create_empty_campaign_contact_call(self, campaign):
         for contact_list in campaign.contact_lists:
-            contact_list_with_contacts = self.contact_list_service.get_by(uuid=contact_list.uuid)
+            contact_list_with_contacts = self.contact_list_service.get_by(
+                uuid=contact_list.uuid)
             for contact in contact_list_with_contacts.contacts:
                 campaign_contact_call = CampaignContactCallModel()
                 campaign_contact_call.phone = contact.phone
                 campaign_contact_call.campaign_uuid = campaign.uuid
                 campaign_contact_call.contact_list_uuid = contact_list.uuid
                 campaign_contact_call.contact_uuid = contact.uuid
-                self.campaign_contact_call_service.create(campaign_contact_call)
+                self.campaign_contact_call_service.create(
+                    campaign_contact_call)
 
         Session.commit()
 
@@ -171,13 +179,15 @@ class OtpPlaybackService:
         })
         if campaign_contact_call_canceled.total:
             for campaign_contact_call in campaign_contact_call_canceled.items:
-                self.campaign_contact_call_service.delete(campaign_contact_call)
+                self.campaign_contact_call_service.delete(
+                    campaign_contact_call)
 
         Session.commit()
 
     def make_next_application_call(self, application_uuid):
         campaign = self.get_by(application_uuid=application_uuid)
-        campaign_contact_call = self.find_next_campaign_contact_call(application_uuid)
+        campaign_contact_call = self.find_next_campaign_contact_call(
+            application_uuid)
         if campaign_contact_call is None:
             self.finish(application_uuid)
             return
@@ -195,29 +205,32 @@ class OtpPlaybackService:
             "variables": {}
         }
         try:
-            self.calld_client.applications.make_call(application_uuid, call_args)
+            self.calld_client.applications.make_call(
+                application_uuid, call_args)
         except:
             logging.error(traceback.format_exc())
 
-        thread = Thread(target=self.make_next_application_call_if_not_answered, args=(application_uuid,))
+        thread = Thread(target=self.make_next_application_call_if_not_answered, args=(
+            application_uuid,))
         thread.start()
 
     def make_next_application_call_if_not_answered(self, application_uuid):
         logger.warning("Waiting for answer...")
         campaign = self.get_by(application_uuid=application_uuid)
         time.sleep(campaign.answer_wait_time)
-        campaign_contact_call = self.find_last_campaign_contact_call(application_uuid)
+        campaign_contact_call = self.find_last_campaign_contact_call(
+            application_uuid)
         if campaign_contact_call \
                 and campaign_contact_call.make_call is not None \
                 and campaign_contact_call.call_answered is None:
             self.make_next_application_call(application_uuid)
 
-
     def hangup_application_call(self, application_uuid):
         calls = self.calld_client.applications.list_calls(application_uuid)
         if calls.items:
             for call in calls["items"]:
-                self.calld_client.applications.hangup_call(application_uuid, call["id"])
+                self.calld_client.applications.hangup_call(
+                    application_uuid, call["id"])
 
     def play_music(self, application_uuid, call_id):
         campaign = self.get_by(application_uuid=application_uuid)
@@ -227,7 +240,8 @@ class OtpPlaybackService:
         playback = {
             "uri": "sound:" + campaign.playback_file
         }
-        playback = self.calld_client.applications.send_playback(application_uuid, call_id, playback)
+        playback = self.calld_client.applications.send_playback(
+            application_uuid, call_id, playback)
         return playback
 
     def commit(self):
