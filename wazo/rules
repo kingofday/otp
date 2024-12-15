@@ -2,7 +2,7 @@
 
 case "$1" in
     build)
-        python3 setup.py bdist -d dist/python3
+        python3 setup.py bdist -d dist
     ;;
 
     package)
