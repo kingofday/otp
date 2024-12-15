@@ -7,7 +7,7 @@ from setuptools import find_packages
 from setuptools import setup
 
 setup(
-    name='workano-otp-playback',
+    name='workano-otp-request-playback',
     version='0.1',
     description='A plugin for otp playback with different type of otp',
     author='Shahrooz Bazrafshan',
@@ -17,6 +17,6 @@ setup(
         'wazo_calld_otp_request': ['api.yml'],
     },
     entry_points={
-        "wazo_calld.plugins":"otp_request_plugin.plugin:Plugin"
-     }
+        "wazo_calld.plugins": ["otp_request_playback = otp_request_playback.plugin:Plugin"]
+    }
 )
