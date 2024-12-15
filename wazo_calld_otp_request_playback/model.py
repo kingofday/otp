@@ -29,4 +29,5 @@ class OtpRequestModel(Base):
     status = Column(String(128), nullable=False)
     creation_time = Column(Date, nullable=False)
     end_time = Column(Date, nullable=True)
+    answer_time = Column(Date, nullable=True)
     talking_to = Column(JSON, nullable=True)

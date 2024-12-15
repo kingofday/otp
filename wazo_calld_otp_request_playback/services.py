@@ -107,6 +107,8 @@ class OtpPlaybackService:
         if not otp_request:
             logger.info("Couldn't find otp request for call_id: %s", call_id)
             return
+        otp_request['answer_time'] = datetime.now(timezone.utc);
+        dao.edit(otp_request)
         for index, uri in enumerate(otp_request.uris):
             logger.info("URI [%d]: %s", index, uri)
             playback = {
@@ -137,6 +139,7 @@ class OtpPlaybackService:
             self.hangup_application_call(event["application_uuid"])
             otp_request.end_time = datetime.now(timezone.utc)
             dao.edit(otp_request)
+            self.calld_client.applications.hangup_call(otp_request["application_uuid"], call_id)
         # campaign_contact_call = self.find_last_campaign_contact_call(
         #     event["application_uuid"])
         # campaign_contact_call.playback_deleted = datetime.now()

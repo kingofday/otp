@@ -49,6 +49,7 @@ class OtpRequestSchema(BaseSchema):
     status = fields.Str(required=True)
     creation_time = fields.Date(required=True)
     end_time = fields.Date(required=False)
+    answer_time = fields.Date(required=False)
     talking_to = fields.Dict(required=False)
     uris = fields.List(fields.Str(), required=False)
 
