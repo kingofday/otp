@@ -1,8 +1,8 @@
-name: workano-otp-playback
-namespace: official
+name: workano-otp-request-playback
+namespace: workano
 version: 0.0.1
 author: Shahrooz.Bazrsfahan@gmail.com
-display_name: Workano otp playback
+display_name: Workano otp request playback
 min_wazo_version: 19.17
 tags:
   - otp
