@@ -1,2 +1,2 @@
 enabled_plugins:
-  workano_otp_request_playback: true
+  otp_request_playback: true

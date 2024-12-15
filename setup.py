@@ -16,9 +16,9 @@ setup(
     packages=find_packages(),
     include_package_data=True,
     package_data={
-        'wazo_calld_otp_request': ['api.yml'],
+        'wazo_calld_otp_request_playback': ['api.yml'],
     },
     entry_points={
-        "wazo_calld.plugins": ["otp_request_playback = otp_request_playback.plugin:Plugin"]
+        "wazo_calld.plugins": ["otp_request_playback = wazo_calld_otp_request_playback.plugin:Plugin"]
     }
 )
