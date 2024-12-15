@@ -1,5 +1,4 @@
-#!/bin/bash
-# SPDX-License-Identifier: GPL-3.0+
+#!/bin/sh
 
 case "$1" in
     build)
@@ -7,14 +6,18 @@ case "$1" in
     ;;
 
     package)
-        tar xvf dist/python3/wazo-plugind-blank-*.tar.gz -C ${pkgdir}
+        tar xvf dist/python3/workano-otp-playback-*.tar.gz -C ${pkgdir}
         cp -R etc ${pkgdir}/
     ;;
 
     install)
+        systemctl restart wazo-confd
+        systemctl restart wazo-calld
     ;;
 
     uninstall)
+        systemctl restart wazo-confd
+        systemctl restart wazo-calld
     ;;
 
     postrm)
