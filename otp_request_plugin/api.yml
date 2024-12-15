@@ -1,0 +1,112 @@
+
+paths:
+  /otp:
+    post:
+      summary: Make an otp request
+      description: '**Required ACL:** `calld.otp.request`'
+      tags:
+        - otp
+        - request
+        - playback
+      parameters:
+         - name: body
+           in: body
+           required: true
+           schema:
+           $ref: '#/definitions/OtpRequestDto'
+      responses:
+        '201':
+          description: Otp request created
+          schema:
+            $ref: '#/definitions/Otprequest'
+        '400':
+          $ref: '#/responses/CreateError'
+
+parameters:
+  applicationuuid:
+    required: true
+    type: string
+    name: application_uuid
+    in: body
+    description: Application's UUID
+  language:
+    type: string
+    enum: [fa_IR, en_US]
+    description: Language code for the request
+  uris:
+    type: array
+    items:
+    type: string
+    description: A list of URIs in the format `sound:value` or `digits:value`
+  number:
+    type: string
+    description: The phone number for the OTP request
+definitions:
+  OtpRequestModel:
+    type: object
+    properties:
+      uuid:
+        type: string
+        format: uuid
+        readOnly: true
+        description: Unique identifier for the OTP request
+      call_id:
+        type: string
+        description: Identifier for the call associated with the OTP request
+      tenant_uuid:
+        type: string
+        format: uuid
+        description: Tenant's UUID
+      application_uuid:
+        type: string
+        format: uuid
+        description: Application's UUID
+      number:
+        type: string
+        description: The phone number for the OTP request
+      caller_id_name:
+        type: string
+        description: Name associated with the caller ID
+      caller_id_number:
+        type: string
+        description: Number associated with the caller ID
+      answered:
+        type: boolean
+        description: Indicates whether the call was answered
+      language:
+        type: string
+        enum: [fa_IR, en_US]
+        description: Language code for the request
+      status:
+        type: string
+        description: Status of the OTP request
+      uris:
+        type: array
+        items:
+          type: string
+          description: A list of URIs in the format `sound:value` or `digits:value`
+      creation_time:
+        type: string
+        format: date
+        description: The time when the OTP request was created
+      end_time:
+        type: string
+        format: date
+        description: The time when the OTP request ended
+      talking_to:
+        type: object
+        additionalProperties:
+          type: string
+        description: Additional information about the person the call is directed to
+    required:
+      - uuid
+      - call_id
+      - tenant_uuid
+      - application_uuid
+      - number
+      - caller_id_name
+      - caller_id_number
+      - answered
+      - language
+      - status
+      - creation_time

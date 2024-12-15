@@ -6,9 +6,13 @@ from sqlalchemy.types import (String, Boolean, Date)
 from xivo_dao.helpers.db_manager import UUIDAsString
 from sqlalchemy.types import JSON
 
-from ..db import Base
-
-
+from .db import Base
+class OtpRequestDto:
+    application_uuid = Column(UUIDAsString(36), nullable=False)
+    language = Column(String(128), nullable=False)
+    uris = Column(JSON, nullable=True)
+    number = Column(String(128), nullable=False)
+    
 class OtpRequestModel(Base):
     __tablename__ = 'plugin_otp_playback_request'
     uuid = Column(UUIDAsString(36), primary_key=True,
@@ -23,5 +27,6 @@ class OtpRequestModel(Base):
     language = Column(String(128), nullable=False)
     uris = Column(JSON, nullable=True)
     status = Column(String(128), nullable=False)
-    creation_time = Column(Date, nullable=True)
+    creation_time = Column(Date, nullable=False)
+    end_time = Column(Date, nullable=True)
     talking_to = Column(JSON, nullable=True)
