@@ -13,6 +13,8 @@ setup(
     author='Shahrooz Bazrafshan',
     author_email='shahrooz.bazrafshan@gmail.com',
     url='https://workano.com',
+    packages=find_packages(),
+    include_package_data=True,
     package_data={
         'wazo_calld_otp_request': ['api.yml'],
     },
