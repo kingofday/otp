@@ -13,7 +13,7 @@ class OtpPlaybackResource:
     def build_headers(self, model):
         return {'Location': url_for('otp_request_playback', uuid=model.application_uuid, _external=True)}
 
-    @required_acl('calld.otp.create')
+    @required_acl('workano.otp.request')
     def post(self):
         form = self.schema().load(request.get_json())
         model = self.model(**form)

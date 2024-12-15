@@ -5,7 +5,7 @@ from wazo_confd_client import Client as ConfdClient
 from .db import init_db
 from .services import build_otp_playback_service
 from bus_consume import OtpRequestBusEventHandler
-
+from .resource import OtpPlaybackResource
 logger = logging.getLogger(__name__)
 
 class Plugin:
@@ -26,9 +26,9 @@ class Plugin:
 
         # Campaigns
         api.add_resource(
-            CampaignListResource,
+            OtpPlaybackResource,
             '/otp',
-            resource_class_args=(campaign_service,)
+            resource_class_args=(otp_request_service,)
         )
 
     def unload(self):
