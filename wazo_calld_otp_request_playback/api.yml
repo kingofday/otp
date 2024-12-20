@@ -9,50 +9,50 @@ paths:
         - request
         - playback
       parameters:
-         - name: body
-           in: body
-           required: true
-           schema:
-           $ref: '#/definitions/OtpRequestDto'
+         - $ref: '#/parameters/applicationUuid'
+         - $ref: '#/parameters/language'
+         - $ref: '#/parameters/uris'
+         - $ref: '#/parameters/number'
       responses:
         '201':
           description: Otp request created
           schema:
-            $ref: '#/definitions/Otprequest'
+            $ref: '#/definitions/OtpRequest'
         '400':
           $ref: '#/responses/CreateError'
 
 parameters:
-  applicationuuid:
+  applicationUuid:
+    name: application_uuid
     required: true
     type: string
-    name: application_uuid
     in: body
     description: Application's UUID
   language:
+    name: language
+    required: true
     type: string
     enum: [fa_IR, en_US]
     description: Language code for the request
   uris:
+    name: uris
     type: array
-    items:
-    type: string
+    required: true
     description: A list of URIs in the format `sound:value` or `digits:value`
   number:
     type: string
     description: The phone number for the OTP request
+
+
 definitions:
-  OtpRequestModel:
+  OtpRequest:
     type: object
     properties:
       uuid:
         type: string
         format: uuid
-        readOnly: true
-        description: Unique identifier for the OTP request
       call_id:
         type: string
-        description: Identifier for the call associated with the OTP request
       tenant_uuid:
         type: string
         format: uuid
@@ -98,15 +98,3 @@ definitions:
         additionalProperties:
           type: string
         description: Additional information about the person the call is directed to
-    required:
-      - uuid
-      - call_id
-      - tenant_uuid
-      - application_uuid
-      - number
-      - caller_id_name
-      - caller_id_number
-      - answered
-      - language
-      - status
-      - creation_time
