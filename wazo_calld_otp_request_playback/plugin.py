@@ -27,7 +27,7 @@ class Plugin:
         # Campaigns
         api.add_resource(
             OtpPlaybackResource,
-            '/otp',
+            '/otp-playback',
             resource_class_args=(otp_request_service,)
         )
 
